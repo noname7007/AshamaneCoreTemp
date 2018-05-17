@@ -22,6 +22,7 @@
 #include "GarrisonMgr.h"
 #include "Log.h"
 #include "MapManager.h"
+#include "PhasingHandler.h"
 #include "ObjectMgr.h"
 #include "VehicleDefines.h"
 #include "WodGarrison.h"
@@ -155,6 +156,67 @@ bool WodGarrison::Create(uint32 garrSiteId)
     return true;
 }
 
+bool WodGarrison::CanUpgrade()
+{
+    if (_siteLevel->GarrLevel >= WOD_GARRISON_LEVEL_MAX)
+        return false;
+
+    if (_owner->GetCurrency(GARRISON_WOD_CURRENCY) < _siteLevel->UpgradeCost)
+        return false;
+
+    if (_owner->GetMoney() < _siteLevel->UpgradeGoldCost)
+        return false;
+
+    if (!AI()->OnCheckUpgradeable())
+        return false;
+
+    return true;
+}
+
+bool WodGarrison::Upgrade()
+{
+    if (!CanUpgrade())
+        return false;
+
+    GarrSiteLevelEntry const* siteLevel = sGarrisonMgr.GetGarrSiteLevelEntry(_siteLevel->GarrSiteID, _siteLevel->GarrLevel + 1);
+    if (!siteLevel)
+        return false;
+
+    _owner->ModifyCurrency(GARRISON_WOD_CURRENCY, -_siteLevel->UpgradeCost);
+    _owner->ModifyMoney(-_siteLevel->UpgradeGoldCost);
+
+    SetSiteLevel(siteLevel);
+    InitializePlots();
+    _owner->SendGarrisonRemoteInfo();
+    PhasingHandler::OnConditionChange(_owner);
+
+    TeleportOwnerAndPlayMovie();
+
+    return true;
+}
+
+void WodGarrison::TeleportOwnerAndPlayMovie() const
+{
+    Position WodGarrisonEntrancePositions[2][3] =
+    {
+        // Horde
+        {
+            { 5698.020020f, 4512.1635574f,  127.401695f,    2.8622720f  },
+            { 5754.82f,     4495.425f,      132.50f,        2.90f       },
+            { 5622.5063f,   4465.5161f,     130.1637f,      0.0f        }
+        },
+        // Alliance
+        {
+            { 1766.761475f, 191.2846830f, 72.115326f, 0.4649370f },
+            { 1759.94f,     184.86f,      71.50f,     0.57f      },
+            { 1759.94f,     184.86f,      71.50f,     0.57f      }
+        }
+    };
+
+    _owner->AddMovieDelayedTeleport(_siteLevel->UpgradeMovieID, _siteLevel->MapID, WodGarrisonEntrancePositions[GetFaction()][_siteLevel->GarrLevel - 1]);
+    _owner->SendMovieStart(_siteLevel->UpgradeMovieID);
+}
+
 void WodGarrison::Delete()
 {
     SQLTransaction trans = CharacterDatabase.BeginTransaction();
@@ -184,17 +246,14 @@ void WodGarrison::InitializePlots()
             plotInfo.PacketInfo.GarrPlotInstanceID = garrPlotInstanceId;
             plotInfo.PacketInfo.PlotPos = Position(gameObject->Pos.X, gameObject->Pos.Y, gameObject->Pos.Z, 2 * std::acos(gameObject->Rot[3]));
             plotInfo.PacketInfo.PlotType = plot->PlotType;
+            plotInfo.Rotation = QuaternionData(gameObject->Rot[0], gameObject->Rot[1], gameObject->Rot[2], gameObject->Rot[3]);
             plotInfo.EmptyGameObjectId = gameObject->ID;
             plotInfo.GarrSiteLevelPlotInstId = plots->at(i)->ID;
         }
     }
 }
 
-void WodGarrison::Upgrade()
-{
-}
-
-void WodGarrison::Enter() const
+void WodGarrison::Enter()
 {
     Garrison::Enter();
 
@@ -203,7 +262,7 @@ void WodGarrison::Enter() const
             _owner->SeamlessTeleportToMap(_siteLevel->MapID);
 }
 
-void WodGarrison::Leave() const
+void WodGarrison::Leave()
 {
     if (MapEntry const* map = sMapStore.LookupEntry(_siteLevel->MapID))
     {
@@ -219,6 +278,8 @@ void WodGarrison::Leave() const
             Garrison::Leave();
             _owner->SeamlessTeleportToMap(map->ParentMapID);
         }
+        else // We already have been teleported
+            Garrison::Leave();
     }
 }
 
@@ -563,7 +624,7 @@ GameObject* WodGarrison::Plot::CreateGameObject(Map* map, GarrisonFactionIndex f
         return nullptr;
     }
 
-    GameObject* building = GameObject::CreateGameObject(entry, map, PacketInfo.PlotPos.Pos, QuaternionData(), 255, GO_STATE_READY);
+    GameObject* building = GameObject::CreateGameObject(entry, map, PacketInfo.PlotPos.Pos, Rotation, 255, GO_STATE_READY);
     if (!building)
         return nullptr;
 
@@ -572,7 +633,7 @@ GameObject* WodGarrison::Plot::CreateGameObject(Map* map, GarrisonFactionIndex f
         if (FinalizeGarrisonPlotGOInfo const* finalizeInfo = sGarrisonMgr.GetPlotFinalizeGOInfo(PacketInfo.GarrPlotInstanceID))
         {
             Position const& pos2 = finalizeInfo->FactionInfo[faction].Pos;
-            if (GameObject* finalizer = GameObject::CreateGameObject(finalizeInfo->FactionInfo[faction].GameObjectId, map, pos2, QuaternionData(), 255, GO_STATE_READY))
+            if (GameObject* finalizer = GameObject::CreateGameObject(finalizeInfo->FactionInfo[faction].GameObjectId, map, pos2, Rotation, 255, GO_STATE_READY))
             {
                 // set some spell id to make the object delete itself after use
                 finalizer->SetSpellId(finalizer->GetGOInfo()->goober.spell);

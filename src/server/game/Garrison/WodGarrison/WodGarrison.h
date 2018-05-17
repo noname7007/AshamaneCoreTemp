@@ -20,7 +20,10 @@
 #define WodGarrison_h__
 
 #include "Player.h"
+#include "GameObjectData.h"
 #include "Garrison.h"
+
+#define WOD_GARRISON_LEVEL_MAX 3
 
 enum GarrisonBuildingFlags
 {
@@ -67,6 +70,7 @@ public:
         void SetBuildingInfo(WorldPackets::Garrison::GarrisonBuildingInfo const& buildingInfo, Player* owner);
 
         WorldPackets::Garrison::GarrisonPlotInfo PacketInfo;
+        QuaternionData Rotation;
         uint32 EmptyGameObjectId = 0;
         uint32 GarrSiteLevelPlotInstId = 0;
         Building BuildingInfo;
@@ -79,11 +83,13 @@ public:
     static void DeleteFromDB(ObjectGuid::LowType ownerGuid, SQLTransaction trans);
 
     bool Create(uint32 garrSiteId) override;
-    void Upgrade();
+    bool CanUpgrade();
+    bool Upgrade();
+    void TeleportOwnerAndPlayMovie() const;
     void Delete() override;
 
-    void Enter() const override;
-    void Leave() const override;
+    void Enter() override;
+    void Leave() override;
 
     bool IsAllowedArea(AreaTableEntry const* area) const override;
 
