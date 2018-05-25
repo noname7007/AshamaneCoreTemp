@@ -126,14 +126,14 @@ namespace Instances { namespace Bloodmaul
 
                     me->AddUnitState(UnitState::UNIT_STATE_ROOT);
                     me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_REMOVE_CLIENT_CONTROL);
-                    //me->RemoveAllAreasTrigger();
+                    //me->RemoveAllAreaTriggers();
                 }
 
                 void JustDied(Unit*) override
                 {
                     _JustDied();
 
-                    //me->RemoveAllAreasTrigger();
+                    //me->RemoveAllAreaTriggers();
 
                     if (m_Instance != nullptr)
                         m_Instance->SendEncounterUnit(EncounterFrameType::ENCOUNTER_FRAME_DISENGAGE, me);
@@ -325,9 +325,9 @@ namespace Instances { namespace Bloodmaul
 
                 G3D::Vector3 GetBurningSlagSpawnPos()
                 {
-                    float l_PosX = frand(s_MinPositionX, s_MaxPositionX);
-                    float l_PosY = frand(s_MinPositionY, s_MaxPositionY);
-                    return G3D::Vector3(l_PosX, l_PosY, s_PositionZ);
+                    float posX = frand(s_MinPositionX, s_MaxPositionX);
+                    float posY = frand(s_MinPositionY, s_MaxPositionY);
+                    return G3D::Vector3(posX, posY, s_PositionZ);
                 }
             };
 

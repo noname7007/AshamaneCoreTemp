@@ -712,7 +712,7 @@ public:
     {
         PrepareAuraScript(spell_font_life_AuraScript);
 
-        void OnApply(AuraEffect const* /*p_AurEff*/, AuraEffectHandleModes /*mode*/)
+        void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
         {
             switch (urand(0, 2))
             {
@@ -1172,7 +1172,7 @@ public:
 
     /*void OnCreate() override
     {
-        p_AreaTrigger->SetCustomRadius(6.0f);
+        at->SetCustomRadius(6.0f);
     }*/
 
     void OnUnitEnter(Unit* unit) override
