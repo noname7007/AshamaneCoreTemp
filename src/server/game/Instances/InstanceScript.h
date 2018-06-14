@@ -91,6 +91,12 @@ enum DoorType
     MAX_DOOR_TYPES
 };
 
+enum ChallengeModeSpells
+{
+    SPELL_CHALLENGER_MIGHT  = 206150,
+    SPELL_CHALLENGER_BURDEN = 206151
+};
+
 struct DoorData
 {
     uint32 entry, bossId;
@@ -205,6 +211,7 @@ class TC_GAME_API InstanceScript : public ZoneScript
         GameObject* GetGameObject(uint32 type);
 
         void OnPlayerEnter(Player*) override;
+        void OnPlayerExit(Player*) override;
         void OnPlayerDeath(Player*) override;
 
         // Handle open / close objects
@@ -342,9 +349,20 @@ class TC_GAME_API InstanceScript : public ZoneScript
 
         // Challenge Modes
         void StartChallengeMode(uint8 level);
+        void CompleteChallengeMode();
+
         bool IsChallengeModeStarted() const { return _challengeModeStarted; }
         uint8 GetChallengeModeLevel() const { return _challengeModeLevel; }
         uint32 GetChallengeModeCurrentDuration() const;
+
+        void SendChallengeModeStart(Player* player = nullptr) const;
+        void SendChallengeModeDeathCount(Player* player = nullptr) const;
+        void SendChallengeModeElapsedTimer(Player* player = nullptr) const;
+
+        void CastChallengeCreatureSpell(Creature* creature);
+        void CastChallengePlayerSpell(Player* player);
+
+        virtual void SpawnChallengeModeRewardChest() { }
 
     protected:
         void SetHeaders(std::string const& dataHeaders);
