@@ -303,6 +303,7 @@ struct TC_GAME_API ScriptedAI : public CreatureAI
     {
         switch (_difficulty)
         {
+            case DIFFICULTY_NORMAL_RAID:
             case DIFFICULTY_10_N:
                 return normal10;
             case DIFFICULTY_25_N:
@@ -319,6 +320,7 @@ struct TC_GAME_API ScriptedAI : public CreatureAI
     {
         switch (_difficulty)
         {
+            case DIFFICULTY_NORMAL_RAID:
             case DIFFICULTY_10_N:
                 return normal10;
             case DIFFICULTY_25_N:
@@ -378,7 +380,7 @@ class TC_GAME_API BossAI : public ScriptedAI
 
     protected:
         void _Reset();
-        void _EnterCombat();
+        void _EnterCombat(bool showFrameEngage = true);
         void _JustDied();
         void _JustReachedHome();
         void _KilledUnit(Unit* victim);

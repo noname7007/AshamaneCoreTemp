@@ -154,6 +154,8 @@ enum WarriorSpells
     SPELL_WARRIOR_VICTORY_RUSH_DAMAGE               = 34428,
     SPELL_WARRIOR_VICTORY_RUSH_HEAL                 = 118779,
     SPELL_WARRIOR_VIGILANCE_PROC                    = 50725,
+    SPELL_WARRIOR_WAR_MACHINE_TALENT_AURA           = 215556,
+    SPELL_WARRIOR_WAR_MACHINE_AURA                  = 215566,
     SPELL_WARRIOR_WARBRINGER                        = 103828,
     SPELL_WARRIOR_WARBRINGER_ROOT                   = 105771,
     SPELL_WARRIOR_WARBRINGER_SNARE                  = 137637,
@@ -298,33 +300,27 @@ public:
 };
 
 // Whirlwind - 190411
-class spell_warr_whirlwind : public SpellScriptLoader
+class spell_warr_whirlwind : public SpellScript
 {
-public:
-    spell_warr_whirlwind() : SpellScriptLoader("spell_warr_whirlwind") {}
+    PrepareSpellScript(spell_warr_whirlwind);
 
-    class spell_warr_whirlwind_SpellScript : public SpellScript
+    void HandleProc()
     {
-        PrepareSpellScript(spell_warr_whirlwind_SpellScript);
-
-        void HandleProc()
-        {
-            Unit* caster = GetCaster();
-            if (!caster)
-                return;
-
+        if (Unit* caster = GetCaster())
             caster->CastSpell(caster, SPELL_WARRIOR_MEAT_CLEAVER_PROC, true);
-        }
+    }
 
-        void Register() override
-        {
-            OnCast += SpellCastFn(spell_warr_whirlwind_SpellScript::HandleProc);
-        }
-    };
-
-    SpellScript* GetSpellScript() const override
+    void HandleAfterCast()
     {
-        return new spell_warr_whirlwind_SpellScript();
+        if (Unit* caster = GetCaster())
+            if (caster->HasAura(SPELL_WARRIOR_WRECKING_BALL_EFFECT))
+                caster->RemoveAura(SPELL_WARRIOR_WRECKING_BALL_EFFECT);
+    }
+
+    void Register() override
+    {
+        OnCast += SpellCastFn(spell_warr_whirlwind::HandleProc);
+        AfterCast += SpellCastFn(spell_warr_whirlwind::HandleAfterCast);
     }
 };
 
@@ -2351,7 +2347,7 @@ public:
     }
 };
 
-//215570 - Wrecking Ball
+// 215570 - Wrecking Ball
 class spell_warr_wrecking_ball_effect : public SpellScriptLoader
 {
 public:
@@ -2372,7 +2368,7 @@ public:
 
         void Register() override
         {
-                OnEffectProc += AuraEffectProcFn(spell_warr_wrecking_ball_effect_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_ADD_PCT_MODIFIER);
+            OnEffectProc += AuraEffectProcFn(spell_warr_wrecking_ball_effect_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_ADD_PCT_MODIFIER);
         }
     };
 
@@ -2888,6 +2884,30 @@ class spell_warr_execute : public SpellScript
     }
 };
 
+// War Machine 215556
+class aura_warr_war_machine : public AuraScript
+{
+    PrepareAuraScript(aura_warr_war_machine);
+
+    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (Unit* caster = GetCaster())
+            caster->CastSpell(caster, SPELL_WARRIOR_WAR_MACHINE_AURA, true);
+    }
+
+    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (Unit* caster = GetCaster())
+            caster->RemoveAurasDueToSpell(SPELL_WARRIOR_WAR_MACHINE_AURA);
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(aura_warr_war_machine::OnApply, EFFECT_0, SPELL_AURA_PROC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+        OnEffectRemove += AuraEffectRemoveFn(aura_warr_war_machine::OnRemove, EFFECT_0, SPELL_AURA_PROC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
 // Ravager - 76168
 struct npc_warr_ravager : public ScriptedAI
 {
@@ -2995,7 +3015,7 @@ void AddSC_warrior_spell_scripts()
     new spell_warr_victory_rush();
     new spell_warr_vigilance();
     new spell_warr_vigilance_trigger();
-    new spell_warr_whirlwind();
+    RegisterSpellScript(spell_warr_whirlwind);
     new spell_warr_wrecking_ball_effect();
     new spell_warr_rallying_cry();
     new spell_warr_jump_to_skyhold();
@@ -3003,6 +3023,7 @@ void AddSC_warrior_spell_scripts()
     RegisterSpellAndAuraScriptPair(spell_warr_ravager, aura_warr_ravager);
     RegisterSpellScript(spell_warr_ravager_damage);
     RegisterSpellScript(spell_warr_execute);
+    RegisterAuraScript(aura_warr_war_machine);
 
     RegisterCreatureAI(npc_warr_ravager);
 }

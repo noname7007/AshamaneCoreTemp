@@ -419,7 +419,7 @@ bool Creature::InitEntry(uint32 entry, CreatureData const* data /*= nullptr*/)
     return true;
 }
 
-bool Creature::UpdateEntry(uint32 entry, CreatureData const* data /*= nullptr*/, bool updateLevel /* = true */)
+bool Creature::UpdateEntry(uint32 entry, CreatureData const* data /*= nullptr*/, bool updateLevel /* = true */, bool updateScript /*= false*/)
 {
     if (!InitEntry(entry, data))
         return false;
@@ -507,6 +507,10 @@ bool Creature::UpdateEntry(uint32 entry, CreatureData const* data /*= nullptr*/,
 
     UpdateMovementFlags();
     LoadCreaturesAddon();
+
+    if (updateScript)
+        AIM_Initialize();
+
     return true;
 }
 
@@ -672,7 +676,11 @@ void Creature::Update(uint32 diff)
                 // do not allow the AI to be changed during update
                 m_AI_locked = true;
                 i_AI->UpdateOperations(diff);
-                i_AI->UpdateAI(diff);
+
+                // Recheck in case UpdateOperations changed the AI (creature destroy, etc)
+                if (i_AI)
+                    i_AI->UpdateAI(diff);
+
                 m_AI_locked = false;
             }
 
@@ -2549,7 +2557,7 @@ void Creature::AllLootRemovedFromCorpse()
 bool Creature::HasScalableLevels() const
 {
     CreatureTemplate const* cinfo = GetCreatureTemplate();
-    return cinfo->levelScaling.is_initialized();
+    return !IsPet() && cinfo->levelScaling.is_initialized();
 }
 
 float Creature::GetHealthMultiplierForTarget(WorldObject const* target) const

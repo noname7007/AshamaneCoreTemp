@@ -906,8 +906,9 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
             switch (GetEntry())
             {
                 case 510: // mage Water Elemental
+                case 78116:
                 {
-                    SetBonusDamage(int32(GetOwner()->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FROST) * 0.33f));
+                    SetBonusDamage(int32(GetOwner()->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_MAGIC)));
                     break;
                 }
                 case 1964: //force of nature
@@ -1770,7 +1771,7 @@ void Pet::LearnSpecializationSpells()
         {
             SpecializationSpellsEntry const* specSpell = specSpells->at(j);
             SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(specSpell->SpellID);
-            if (!spellInfo || spellInfo->SpellLevel > getLevel())
+            if (!spellInfo || (spellInfo->SpellLevel && spellInfo->SpellLevel > getLevel()))
                 continue;
 
             learnedSpells.push_back(specSpell->SpellID);
