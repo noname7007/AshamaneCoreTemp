@@ -3466,8 +3466,7 @@ class aura_sha_rainfall : public AuraScript
 
     void HandleProc(AuraEffect const* /*aurEff*/, ProcEventInfo& /*eventInfo*/)
     {
-        if (Unit* caster = GetCaster())
-            ModDuration(GetEffect(EFFECT_2)->GetBaseAmount() * IN_MILLISECONDS, GetEffect(EFFECT_3)->GetBaseAmount() * IN_MILLISECONDS);
+        ModDuration(GetEffect(EFFECT_2)->GetBaseAmount() * IN_MILLISECONDS, GetEffect(EFFECT_3)->GetBaseAmount() * IN_MILLISECONDS);
     }
 
     void Register() override
@@ -3554,9 +3553,9 @@ class spell_sha_earth_shock: public SpellScript
 {
     PrepareSpellScript(spell_sha_earth_shock);
 
-    void HandleTakePower(Powers& /*power*/, int32& powerCount)
+    void HandleTakePower(SpellPowerCost& powerCost)
     {
-        _takenPower = powerCount = std::min(powerCount, 100);
+        _takenPower = powerCost.Amount;
     }
 
     void HandleCalcDamage(SpellEffIndex /*effIndex*/)
@@ -3615,7 +3614,7 @@ class spell_sha_enhancement_lightning_bolt : public SpellScript
         return ValidateSpellInfo({ SPELL_SHAMAN_OVERCHARGE });
     }
 
-    void HandleTakePower(Powers& /*power*/, int32& powerCount)
+    void HandleTakePower(SpellPowerCost& powerCost)
     {
         _maxTakenPower      = 0;
         _maxDamagePercent   = 0;
@@ -3626,7 +3625,7 @@ class spell_sha_enhancement_lightning_bolt : public SpellScript
             _maxDamagePercent   = overcharge->GetSpellEffectInfo(EFFECT_1)->BasePoints;
         }
 
-        _takenPower = powerCount = std::min(GetCaster()->GetPower(POWER_MAELSTROM), _maxTakenPower);
+        _takenPower = powerCost.Amount = std::min(GetCaster()->GetPower(POWER_MAELSTROM), _maxTakenPower);
     }
 
     void HandleDamage(SpellEffIndex /*effIndex*/)
